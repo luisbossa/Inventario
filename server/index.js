@@ -1,34 +1,31 @@
 import express from "express";
 import expressLayouts from "express-ejs-layouts";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import apiRouter from "./routes/api.js";
 import webRouter from "./routes/web.js";
 import repuestosRouter from "./routes/repuestos.js";
 import * as vistas from "./vistas.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// En IISNode, process.env.PORT es una Named Pipe (ej. \\.\pipe\...) y no un número.
+// Usar process.cwd() garantiza encontrar las carpetas tanto en Local, IIS como en Vercel
+const ROOT_DIR = process.cwd();
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-// Indicar a Express que confíe en el reverse proxy (IIS)
+// Indicar a Express que confíe en el reverse proxy (IIS / Vercel)
 app.set("trust proxy", true);
 
 // Configuración de motor de vistas EJS
 app.set("view engine", "ejs");
-app.set("views", join(__dirname, "..", "views"));
+app.set("views", join(ROOT_DIR, "views"));
 app.set("layout", "layouts/main");
 app.set("layout extractStyles", true);
 app.set("layout extractScripts", true);
 app.use(expressLayouts);
 
 // Archivos estáticos
-app.use(express.static(join(__dirname, "..", "public")));
-// Si tienes imágenes en la carpeta raíz /images, puedes descomentar la siguiente línea:
-// app.use("/images", express.static(join(__dirname, "..", "images")));
+app.use(express.static(join(ROOT_DIR, "public")));
+app.use("/images", express.static(join(ROOT_DIR, "images")));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -78,13 +75,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Inicio del servidor
-app.listen(PORT, () => {
-  if (isNaN(PORT)) {
-    // Si no es un número, significa que está corriendo bajo la Named Pipe de IISNode
-    console.log(`Inventario CGI iniciado correctamente bajo IISNode.`);
-  } else {
-    // Modo local / desarrollo normal
-    console.log(`Inventario CGI corriendo en http://localhost:${PORT}`);
-  }
-});
+// EN VERCEL NO SE USA APP.LISTEN, SOLO EN LOCAL O IIS
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    if (isNaN(PORT)) {
+      console.log(`Inventario CGI iniciado correctamente bajo IISNode.`);
+    } else {
+      console.log(`Inventario CGI corriendo en http://localhost:${PORT}`);
+    }
+  });
+}
+
+// ESTA LÍNEA ES OBLIGATORIA PARA QUE VERCEL FUNCIONE
+export default app;
