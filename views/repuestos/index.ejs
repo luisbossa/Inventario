@@ -1,0 +1,172 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <p class="encabezado__sub"><%= subtitulo %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-rep-nuevo">
+      <i class="fa-solid fa-plus"></i> Nuevo artículo
+    </button>
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-rep-ingreso">
+      <i class="fa-solid fa-arrow-down"></i> Registrar ingreso
+    </button>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-rep-entrega">
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<section class="metricas" aria-label="Resumen">
+  <div class="metrica">
+    <span class="metrica__etiqueta">Artículos registrados</span>
+    <span class="metrica__valor"><%= resumen.total_articulos %></span>
+    <span class="metrica__nota">
+      <%= resumen.por_categoria["Periférico"] %> periféricos · <%= resumen.por_categoria["Varios"] %> varios · <%= resumen.por_categoria["Cable"] %> cables
+    </span>
+  </div>
+  <div class="metrica">
+    <span class="metrica__etiqueta">Unidades en existencia</span>
+    <span class="metrica__valor"><%= resumen.total_unidades %></span>
+    <span class="metrica__nota">Total en bodega</span>
+  </div>
+  <a class="metrica <%= resumen.sin_stock ? 'metrica--alerta' : '' %>" href="/repuestos?estado=agotado">
+    <span class="metrica__etiqueta">Sin existencia</span>
+    <span class="metrica__valor"><%= resumen.sin_stock %></span>
+    <span class="metrica__nota"><%= resumen.por_reponer %> por reponer en total</span>
+  </a>
+  <a class="metrica" href="/repuestos/prestamos">
+    <span class="metrica__etiqueta">Unidades prestadas</span>
+    <span class="metrica__valor"><%= resumen.prestamos_activos %></span>
+    <span class="metrica__nota">Pendientes de devolución</span>
+  </a>
+</section>
+
+<section class="panel" aria-labelledby="rep-tabla-titulo">
+  <h2 id="rep-tabla-titulo" class="sr-only">Listado de repuestos</h2>
+
+  <div class="herramientas">
+    <nav class="filtros-estado" aria-label="Filtrar por categoría">
+      <% [
+        { valor: "", texto: "Todos", total: todos.length },
+        { valor: "Periférico", texto: "Periféricos", total: resumen.por_categoria["Periférico"] },
+        { valor: "Varios", texto: "Varios", total: resumen.por_categoria["Varios"] },
+        { valor: "Cable", texto: "Cables", total: resumen.por_categoria["Cable"] },
+      ].forEach((f) => { %>
+        <a
+          class="filtro-estado <%= filtros.categoria === f.valor ? 'is-active' : '' %>"
+          href="<%= urlCon('/repuestos', { q: filtros.q, estado: filtros.estado, categoria: f.valor }) %>"
+          <%- filtros.categoria === f.valor ? 'aria-current="true"' : '' %>
+        >
+          <%= f.texto %> <span class="contador"><%= f.total %></span>
+        </a>
+      <% }) %>
+    </nav>
+
+    <form class="herramientas__derecha" method="get" action="/repuestos">
+      <input type="hidden" name="q" value="<%= filtros.q %>" />
+      <input type="hidden" name="categoria" value="<%= filtros.categoria %>" />
+      <label class="sr-only" for="filtro-estado-rep">Estado</label>
+      <select class="control control--sm" id="filtro-estado-rep" name="estado" data-auto-enviar>
+        <option value="">Todos los estados</option>
+        <option value="ok" <%= filtros.estado === "ok" ? "selected" : "" %>>Disponible</option>
+        <option value="bajo" <%= filtros.estado === "bajo" ? "selected" : "" %>>Reponer</option>
+        <option value="agotado" <%= filtros.estado === "agotado" ? "selected" : "" %>>Sin stock</option>
+      </select>
+    </form>
+  </div>
+
+  <% if (filtros.q || filtros.estado) { %>
+    <p class="filtro-activo">
+      <%= repuestos.length %> resultado(s)<% if (filtros.q) { %> para “<strong><%= filtros.q %></strong>”<% } %>
+      <a class="enlace" href="<%= urlCon('/repuestos', { categoria: filtros.categoria }) %>">Limpiar filtros</a>
+    </p>
+  <% } %>
+
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Artículo</th>
+          <th scope="col">Categoría</th>
+          <th scope="col">Condición</th>
+          <th scope="col" class="num">Existencia</th>
+          <th scope="col" class="num">Prestados</th>
+          <th scope="col" class="num">Mínimo</th>
+          <th scope="col">Estado</th>
+          <th scope="col"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (repuestos.length === 0) { %>
+          <tr>
+            <td colspan="8" class="tabla__vacia">
+              <% if (todos.length === 0) { %>
+                No hay artículos registrados.<br />
+                <button type="button" class="btn btn--primario" data-abrir="dlg-rep-nuevo">
+                  <i class="fa-solid fa-plus"></i> Registrar el primero
+                </button>
+              <% } else { %>
+                Ningún artículo coincide con los filtros aplicados.
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+
+        <% repuestos.forEach((r) => { %>
+          <tr>
+            <td>
+              <a class="insumo" href="/repuestos/<%= r.id %>">
+                <span class="insumo__codigo"><%= r.nombre %></span>
+                <% if (r.detalle) { %><span class="insumo__marca"><%= r.detalle %></span><% } %>
+              </a>
+            </td>
+            <td><%= r.categoria %></td>
+            <td><%= r.condicion %></td>
+            <td class="num fuerte"><%= r.stock %></td>
+            <td class="num"><%= r.prestados || "—" %></td>
+            <td class="num"><%= r.stock_minimo %></td>
+            <td><span class="estado estado--<%= r.estado %>"><%= ETIQUETA_ESTADO[r.estado] %></span></td>
+            <td>
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="btn btn--secundario btn--sm"
+                  data-abrir="dlg-rep-entrega"
+                  data-repuesto="<%= r.id %>"
+                  <%= r.stock === 0 ? "disabled" : "" %>
+                >
+                  Entregar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--fantasma btn--sm btn--icono"
+                  data-abrir="dlg-rep-ingreso"
+                  data-repuesto="<%= r.id %>"
+                  title="Registrar ingreso"
+                  aria-label="Registrar ingreso de <%= nombreRepuesto(r) %>"
+                >
+                  <i class="fa-solid fa-arrow-down"></i>
+                </button>
+                <a
+                  class="btn btn--fantasma btn--sm btn--icono"
+                  href="/repuestos/<%= r.id %>"
+                  title="Ver detalle"
+                  aria-label="Ver detalle de <%= nombreRepuesto(r) %>"
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel__pie">
+    <span>Mostrando <%= repuestos.length %> de <%= todos.length %> artículos</span>
+    <a class="enlace" href="/repuestos/entregas">Ver entregas a funcionarios</a>
+  </div>
+</section>
+
+<%- include("_dialogos") %>

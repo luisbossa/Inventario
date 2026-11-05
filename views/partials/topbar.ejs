@@ -1,0 +1,41 @@
+<header class="topbar">
+  <label class="topbar__menu" for="menu-toggle" aria-label="Abrir menú">
+    <i class="fa-solid fa-bars"></i>
+  </label>
+
+  <nav class="migas" aria-label="Ruta">
+    <span>Inventario</span>
+    <% migas.forEach((miga) => { %>
+      <i class="fa-solid fa-chevron-right migas__sep" aria-hidden="true"></i>
+      <a href="<%= miga.href %>"><%= miga.texto %></a>
+    <% }) %>
+    <i class="fa-solid fa-chevron-right migas__sep" aria-hidden="true"></i>
+    <span class="migas__actual" aria-current="page"><%= titulo %></span>
+  </nav>
+
+  <% if (busqueda) { %>
+    <form
+      class="buscador"
+      role="search"
+      <% if (busqueda.accion) { %>method="get" action="<%= busqueda.accion %>"<% } else { %>onsubmit="return false"<% } %>
+    >
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input
+        type="search"
+        <% if (busqueda.id) { %>id="<%= busqueda.id %>"<% } %>
+        <% if (busqueda.accion) { %>name="q"<% } %>
+        value="<%= busqueda.valor || '' %>"
+        placeholder="<%= busqueda.placeholder %>"
+        aria-label="<%= busqueda.placeholder %>"
+      />
+      <% Object.entries(busqueda.ocultos || {}).forEach(([nombre, valor]) => { %>
+        <% if (valor) { %><input type="hidden" name="<%= nombre %>" value="<%= valor %>" /><% } %>
+      <% }) %>
+    </form>
+  <% } %>
+
+  <div class="usuario">
+    <span class="usuario__avatar" aria-hidden="true">DI</span>
+    <span>Dpto. Informática</span>
+  </div>
+</header>

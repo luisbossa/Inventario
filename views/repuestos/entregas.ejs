@@ -1,0 +1,116 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <p class="encabezado__sub"><%= subtitulo %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <a class="btn btn--secundario" href="/repuestos/prestamos">Ver préstamos</a>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-rep-entrega">
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<div class="rejilla-2">
+  <section class="panel" aria-labelledby="casos-titulo">
+    <div class="panel__cabecera">
+      <h2 id="casos-titulo" class="panel__titulo">Casos <span class="contador"><%= entregas.length %></span></h2>
+    </div>
+
+    <form class="filtros" method="get" action="/repuestos/entregas">
+      <input type="hidden" name="q" value="<%= filtros.q %>" />
+      <label class="filtro">
+        Modalidad
+        <select class="control control--sm" name="modalidad" data-auto-enviar>
+          <option value="">Todas</option>
+          <option value="DEFINITIVA" <%= filtros.modalidad === "DEFINITIVA" ? "selected" : "" %>>Definitiva</option>
+          <option value="PRESTAMO" <%= filtros.modalidad === "PRESTAMO" ? "selected" : "" %>>Préstamo</option>
+        </select>
+      </label>
+      <label class="filtro">
+        Desde
+        <input class="control control--sm" type="date" name="desde" value="<%= filtros.desde %>" />
+      </label>
+      <label class="filtro">
+        Hasta
+        <input class="control control--sm" type="date" name="hasta" value="<%= filtros.hasta %>" />
+      </label>
+      <button type="submit" class="btn btn--secundario btn--sm">Aplicar</button>
+      <% if (filtros.q || filtros.modalidad || filtros.desde || filtros.hasta) { %>
+        <a class="btn btn--fantasma btn--sm" href="/repuestos/entregas">Limpiar</a>
+      <% } %>
+    </form>
+
+    <% if (filtros.q) { %>
+      <p class="filtro-activo">
+        Resultados para “<strong><%= filtros.q %></strong>”
+        <a class="enlace" href="<%= urlCon('/repuestos/entregas', { modalidad: filtros.modalidad, desde: filtros.desde, hasta: filtros.hasta }) %>">Quitar búsqueda</a>
+      </p>
+    <% } %>
+
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col" class="num">Caso</th>
+            <th scope="col">Funcionario / servicio</th>
+            <th scope="col">Artículos</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Entregado por</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (entregas.length === 0) { %>
+            <tr><td colspan="5" class="tabla__vacia">No hay entregas con los filtros aplicados.</td></tr>
+          <% } %>
+          <% entregas.forEach((e) => { %>
+            <tr>
+              <td class="num fuerte"><%= e.caso || "—" %></td>
+              <td>
+                <span class="fuerte"><%= e.funcionario || "—" %></span>
+                <% if (e.nota) { %><br /><span class="texto-tenue"><%= e.nota %></span><% } %>
+              </td>
+              <td>
+                <ul class="chips">
+                  <% e.articulos.forEach((a) => { %>
+                    <li class="chip">
+                      <a href="/repuestos/<%= a.repuesto_id %>"><%= nombreRepuesto(a) %></a><% if (a.cantidad > 1) { %> × <%= a.cantidad %><% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+                <% if (e.modalidad === "PRESTAMO") { %>
+                  <% const pendientes = e.articulos.filter((a) => !a.devuelto_en).length; %>
+                  <span class="mov <%= pendientes ? 'mov--prestamo' : 'mov--entrada' %>">
+                    Préstamo · <%= pendientes ? `${pendientes} pendiente(s)` : "devuelto" %>
+                  </span>
+                <% } %>
+              </td>
+              <td class="nowrap"><%= e.fecha ? fecha(e.fecha, { hora: false }) : "Sin fecha" %></td>
+              <td><%= e.tecnico || "—" %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel__pie">
+      <span>Los casos históricos del Excel no tienen fecha cuando la hoja no la registraba.</span>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="totales-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 id="totales-titulo" class="panel__titulo">Total entregado por artículo</h2>
+        <p class="panel__desc">Definitivas y préstamos</p>
+      </div>
+    </div>
+    <div class="panel__cuerpo">
+      <%- include("../partials/barras", {
+        filas: totales.map((t) => ({ nombre: nombreRepuesto(t), total: t.total })),
+        vacio: "Sin entregas registradas.",
+      }) %>
+    </div>
+  </section>
+</div>
+
+<%- include("_dialogos") %>

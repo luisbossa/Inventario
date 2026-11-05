@@ -1,0 +1,102 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <p class="encabezado__sub"><%= subtitulo %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <a class="btn btn--secundario" href="/consumibles/exportar.csv">
+      <i class="fa-solid fa-download"></i> Exportar
+    </a>
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-ingreso">
+      <i class="fa-solid fa-arrow-down"></i> Registrar ingreso
+    </button>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-entrega">
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<section class="panel" aria-labelledby="mov-titulo">
+  <div class="panel__cabecera">
+    <h2 id="mov-titulo" class="panel__titulo">
+      <%= { SALIDA: "Entregas", ENTRADA: "Ingresos", AJUSTE: "Ajustes" }[filtros.tipo] || "Todos los movimientos" %>
+      <span class="contador"><%= movimientos.length %></span>
+    </h2>
+  </div>
+
+  <form class="filtros" method="get" action="/consumibles/movimientos">
+    <input type="hidden" name="q" value="<%= filtros.q %>" />
+    <label class="filtro">
+      Tipo de movimiento
+      <select class="control control--sm" name="tipo" data-auto-enviar>
+        <option value="SALIDA" <%= filtros.tipo === "SALIDA" ? "selected" : "" %>>Entregas</option>
+        <option value="ENTRADA" <%= filtros.tipo === "ENTRADA" ? "selected" : "" %>>Ingresos</option>
+        <option value="AJUSTE" <%= filtros.tipo === "AJUSTE" ? "selected" : "" %>>Ajustes</option>
+        <option value="" <%= filtros.tipo === "" ? "selected" : "" %>>Todos</option>
+      </select>
+    </label>
+    <label class="filtro">
+      Desde
+      <input class="control control--sm" type="date" name="desde" value="<%= filtros.desde %>" />
+    </label>
+    <label class="filtro">
+      Hasta
+      <input class="control control--sm" type="date" name="hasta" value="<%= filtros.hasta %>" />
+    </label>
+    <button type="submit" class="btn btn--secundario btn--sm">Aplicar</button>
+    <% if (filtros.q || filtros.desde || filtros.hasta || filtros.tipo !== "SALIDA") { %>
+      <a class="btn btn--fantasma btn--sm" href="/consumibles/movimientos">Limpiar</a>
+    <% } %>
+  </form>
+
+  <% if (filtros.q) { %>
+    <p class="filtro-activo">
+      Resultados para “<strong><%= filtros.q %></strong>”
+      <a class="enlace" href="<%= urlCon('/consumibles/movimientos', { tipo: filtros.tipo, desde: filtros.desde, hasta: filtros.hasta }) %>">Quitar búsqueda</a>
+    </p>
+  <% } %>
+
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Fecha</th>
+          <% if (filtros.tipo === "") { %><th scope="col">Movimiento</th><% } %>
+          <th scope="col">N.º caso</th>
+          <th scope="col">Técnico</th>
+          <th scope="col">Lugar / referencia</th>
+          <th scope="col">Insumo</th>
+          <th scope="col">Impresora</th>
+          <th scope="col" class="num">Cantidad</th>
+          <th scope="col" class="num">Existencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (movimientos.length === 0) { %>
+          <tr><td colspan="9" class="tabla__vacia">No hay movimientos con los filtros aplicados.</td></tr>
+        <% } %>
+        <% movimientos.forEach((m) => { %>
+          <tr>
+            <td class="nowrap"><%= fecha(m.fecha) %></td>
+            <% if (filtros.tipo === "") { %>
+              <td><span class="mov mov--<%= m.tipo.toLowerCase() %>"><%= ETIQUETA_TIPO[m.tipo] %></span></td>
+            <% } %>
+            <td class="fuerte"><%= m.caso || "—" %></td>
+            <td><%= m.tecnico || "—" %></td>
+            <td><%= m.lugar || m.nota || "—" %></td>
+            <td><a class="enlace" href="/consumibles/<%= m.consumible_id %>"><%= nombreInsumo(m) %></a></td>
+            <td><%= m.impresora || "—" %></td>
+            <td class="num cantidad--<%= m.tipo.toLowerCase() %>"><%= cantidadConSigno(m) %></td>
+            <td class="num"><%= m.stock_resultante ?? "—" %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel__pie">
+    <span>Las entregas históricas cargadas del Excel no muestran existencia porque no descontaron inventario.</span>
+  </div>
+</section>
+
+<%- include("_dialogos") %>

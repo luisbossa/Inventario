@@ -1,0 +1,183 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <p class="encabezado__sub"><%= subtitulo %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <a class="btn btn--secundario" href="/consumibles/exportar.csv">
+      <i class="fa-solid fa-download"></i> Exportar
+    </a>
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-nuevo">
+      <i class="fa-solid fa-plus"></i> Nuevo insumo
+    </button>
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-ingreso">
+      <i class="fa-solid fa-arrow-down"></i> Registrar ingreso
+    </button>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-entrega">
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<section class="metricas" aria-label="Resumen">
+  <div class="metrica">
+    <span class="metrica__etiqueta">Insumos registrados</span>
+    <span class="metrica__valor"><%= resumen.total_modelos %></span>
+    <span class="metrica__nota"><%= tiposEnUso.length %> tipo(s) de insumo</span>
+  </div>
+  <div class="metrica">
+    <span class="metrica__etiqueta">Unidades en existencia</span>
+    <span class="metrica__valor"><%= resumen.total_unidades %></span>
+    <span class="metrica__nota">Total en bodega</span>
+  </div>
+  <a class="metrica <%= resumen.total_alertas ? 'metrica--alerta' : '' %>" href="/consumibles?estado=bajo">
+    <span class="metrica__etiqueta">Requieren reposición</span>
+    <span class="metrica__valor"><%= resumen.total_alertas %></span>
+    <span class="metrica__nota"><%= resumen.por_estado.agotado %> sin stock</span>
+  </a>
+  <a class="metrica" href="/consumibles/movimientos">
+    <span class="metrica__etiqueta">Entregas del mes</span>
+    <span class="metrica__valor"><%= resumen.entregas_mes %></span>
+    <span class="metrica__nota">Unidades entregadas</span>
+  </a>
+</section>
+
+<section class="panel" aria-labelledby="tabla-titulo">
+  <h2 id="tabla-titulo" class="sr-only">Listado de insumos</h2>
+
+  <div class="herramientas">
+    <nav class="filtros-estado" aria-label="Filtrar por estado">
+      <% [
+        { valor: "", texto: "Todos", total: todos.length },
+        { valor: "bajo", texto: "Reponer", total: resumen.por_estado.bajo },
+        { valor: "agotado", texto: "Sin stock", total: resumen.por_estado.agotado },
+        { valor: "ok", texto: "Disponibles", total: resumen.por_estado.ok },
+      ].forEach((f) => { %>
+        <a
+          class="filtro-estado <%= filtros.estado === f.valor ? 'is-active' : '' %>"
+          href="<%= urlCon('/consumibles', { q: filtros.q, tipo: filtros.tipo, estado: f.valor }) %>"
+          <%- filtros.estado === f.valor ? 'aria-current="true"' : '' %>
+        >
+          <%= f.texto %> <span class="contador"><%= f.total %></span>
+        </a>
+      <% }) %>
+    </nav>
+
+    <form class="herramientas__derecha" method="get" action="/consumibles">
+      <input type="hidden" name="q" value="<%= filtros.q %>" />
+      <input type="hidden" name="estado" value="<%= filtros.estado %>" />
+      <label class="sr-only" for="filtro-tipo">Tipo de insumo</label>
+      <select class="control control--sm" id="filtro-tipo" name="tipo" data-auto-enviar>
+        <option value="">Todos los tipos</option>
+        <% TIPOS_INSUMO.forEach((tipo) => { %>
+          <option value="<%= tipo %>" <%= filtros.tipo === tipo ? "selected" : "" %>><%= tipo %></option>
+        <% }) %>
+      </select>
+      <noscript><button class="btn btn--secundario btn--sm">Filtrar</button></noscript>
+    </form>
+  </div>
+
+  <% if (filtros.q || filtros.tipo) { %>
+    <p class="filtro-activo">
+      <%= consumibles.length %> resultado(s)
+      <% if (filtros.q) { %> para “<strong><%= filtros.q %></strong>”<% } %>
+      <% if (filtros.tipo) { %> en <strong><%= filtros.tipo %></strong><% } %>
+      <a class="enlace" href="<%= urlCon('/consumibles', { estado: filtros.estado }) %>">Limpiar filtros</a>
+    </p>
+  <% } %>
+
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Insumo</th>
+          <th scope="col">Tipo</th>
+          <th scope="col">Impresora compatible</th>
+          <th scope="col">Color</th>
+          <th scope="col" class="num">Existencia</th>
+          <th scope="col" class="num">Mínimo</th>
+          <th scope="col">Estado</th>
+          <th scope="col"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (consumibles.length === 0) { %>
+          <tr>
+            <td colspan="8" class="tabla__vacia">
+              <% if (todos.length === 0) { %>
+                No hay insumos registrados.<br />
+                <button type="button" class="btn btn--primario" data-abrir="dlg-nuevo">
+                  <i class="fa-solid fa-plus"></i> Registrar el primero
+                </button>
+              <% } else { %>
+                Ningún insumo coincide con los filtros aplicados.
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+
+        <% consumibles.forEach((c) => { %>
+          <tr>
+            <td>
+              <a class="insumo" href="/consumibles/<%= c.id %>">
+                <span class="insumo__codigo">
+                  <%= c.codigo %><% if (c.rendimiento) { %><span class="etiqueta" title="<%= c.rendimiento === 'BR' ? 'Bajo' : 'Alto' %> rendimiento"><%= c.rendimiento %></span><% } %>
+                </span>
+                <span class="insumo__marca"><%= c.marca %></span>
+              </a>
+            </td>
+            <td><%= c.tipo %></td>
+            <td><%= c.impresora || "—" %></td>
+            <td><span class="muestra muestra--<%= c.color.toLowerCase() %>"><%= capitalizar(c.color) %></span></td>
+            <td class="num">
+              <div class="existencia">
+                <span class="nivel nivel--<%= c.estado %>" aria-hidden="true"><span style="width: <%= porcentajeNivel(c) %>%"></span></span>
+                <span class="existencia__valor"><%= c.stock %></span>
+              </div>
+            </td>
+            <td class="num"><%= c.stock_minimo %></td>
+            <td><span class="estado estado--<%= c.estado %>"><%= ETIQUETA_ESTADO[c.estado] %></span></td>
+            <td>
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="btn btn--secundario btn--sm"
+                  data-abrir="dlg-entrega"
+                  data-consumible="<%= c.id %>"
+                  <%= c.stock === 0 ? "disabled" : "" %>
+                >
+                  Entregar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--fantasma btn--sm btn--icono"
+                  data-abrir="dlg-ingreso"
+                  data-consumible="<%= c.id %>"
+                  title="Registrar ingreso"
+                  aria-label="Registrar ingreso de <%= nombreInsumo(c) %>"
+                >
+                  <i class="fa-solid fa-arrow-down"></i>
+                </button>
+                <a
+                  class="btn btn--fantasma btn--sm btn--icono"
+                  href="/consumibles/<%= c.id %>"
+                  title="Ver detalle"
+                  aria-label="Ver detalle de <%= nombreInsumo(c) %>"
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel__pie">
+    <span>Mostrando <%= consumibles.length %> de <%= todos.length %> insumos</span>
+    <span>BR: bajo rendimiento · AR: alto rendimiento</span>
+  </div>
+</section>
+
+<%- include("_dialogos") %>

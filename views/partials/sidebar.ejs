@@ -1,0 +1,45 @@
+<aside class="sidebar" aria-label="Navegación principal">
+  <div class="marca">
+    <a class="marca__enlace" href="/">
+    <span class="marca__logo" aria-hidden="true">CGI</span>
+    <span class="marca__texto">
+      <span class="marca__nombre">Inventario CGI</span>
+      <span class="marca__org">Área de Salud Naranjo</span>
+    </span>
+    </a>
+    <label class="sidebar__cerrar" for="menu-toggle" aria-label="Cerrar menú">
+      <i class="fa-solid fa-xmark"></i>
+    </label>
+  </div>
+
+  <nav class="nav">
+    <% [
+      { grupo: "General" },
+      { id: "panel", href: "/", icono: "fa-gauge", texto: "Panel general" },
+      { grupo: "Impresión" },
+      { id: "insumos", href: "/consumibles", icono: "fa-print", texto: "Insumos" },
+      { id: "movimientos", href: "/consumibles/movimientos", icono: "fa-right-left", texto: "Movimientos" },
+      { grupo: "Equipo informático" },
+      { id: "repuestos", href: "/repuestos", icono: "fa-keyboard", texto: "Repuestos" },
+      { id: "rep-entregas", href: "/repuestos/entregas", icono: "fa-people-arrows", texto: "Entregas a funcionarios" },
+      { id: "rep-prestamos", href: "/repuestos/prestamos", icono: "fa-clock-rotate-left", texto: "Préstamos" },
+    ].forEach((item) => { %>
+      <% if (item.grupo) { %>
+        <span class="nav__grupo"><%= item.grupo %></span>
+      <% } else { %>
+        <a
+          class="nav__enlace <%= seccion === item.id ? 'is-active' : '' %>"
+          href="<%= item.href %>"
+          <%- seccion === item.id ? 'aria-current="page"' : '' %>
+        >
+          <i class="fa-solid <%= item.icono %>" aria-hidden="true"></i><%= item.texto %>
+        </a>
+      <% } %>
+    <% }) %>
+  </nav>
+
+  <div class="sidebar__pie">
+    Departamento de Informática<br />
+    Sistema de inventario v2
+  </div>
+</aside>

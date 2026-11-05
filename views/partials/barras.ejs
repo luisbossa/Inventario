@@ -1,0 +1,15 @@
+<%# Lista de barras horizontales. Recibe `filas` [{nombre, total}] y `vacio`. %>
+<% if (filas.length === 0) { %>
+  <p class="ayuda"><%= vacio %></p>
+<% } else { %>
+  <% const maximo = Math.max(...filas.map((f) => f.total)); %>
+  <ul class="barras">
+    <% filas.forEach((f) => { %>
+      <li class="barras__fila">
+        <span class="barras__nombre" title="<%= f.nombre %>"><%= f.nombre %></span>
+        <span class="barras__pista"><span style="width: <%= Math.round((f.total / maximo) * 100) %>%"></span></span>
+        <span class="barras__total"><%= f.total %></span>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

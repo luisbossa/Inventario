@@ -1,0 +1,153 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= repuesto.nombre %></h1>
+    <p class="encabezado__sub"><%= subtitulo %><%= repuesto.detalle ? ` · ${repuesto.detalle}` : "" %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-rep-ingreso" data-repuesto="<%= repuesto.id %>">
+      <i class="fa-solid fa-arrow-down"></i> Registrar ingreso
+    </button>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-rep-entrega" data-repuesto="<%= repuesto.id %>" <%= repuesto.stock === 0 ? "disabled" : "" %>>
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<div class="detalle">
+  <div class="detalle__principal">
+    <section class="panel" aria-labelledby="rep-info-titulo">
+      <div class="panel__cabecera">
+        <h2 id="rep-info-titulo" class="panel__titulo">Información general</h2>
+        <span class="estado estado--<%= repuesto.estado %>"><%= ETIQUETA_ESTADO[repuesto.estado] %></span>
+      </div>
+      <dl class="ficha">
+        <div>
+          <dt>Existencia</dt>
+          <dd class="ficha__grande"><%= repuesto.stock %></dd>
+        </div>
+        <div>
+          <dt>Prestados</dt>
+          <dd class="ficha__grande"><%= repuesto.prestados %></dd>
+        </div>
+        <div>
+          <dt>Stock mínimo</dt>
+          <dd class="ficha__grande"><%= repuesto.stock_minimo %></dd>
+        </div>
+        <div>
+          <dt>Última actualización</dt>
+          <dd><%= fecha(repuesto.actualizado_en || repuesto.creado_en) %></dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="rep-hist-titulo">
+      <div class="panel__cabecera">
+        <h2 id="rep-hist-titulo" class="panel__titulo">
+          Historial de movimientos <span class="contador"><%= movimientos.length %></span>
+        </h2>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Movimiento</th>
+              <th scope="col" class="num">Caso</th>
+              <th scope="col">Funcionario / referencia</th>
+              <th scope="col">Responsable</th>
+              <th scope="col" class="num">Cantidad</th>
+              <th scope="col" class="num">Existencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (movimientos.length === 0) { %>
+              <tr><td colspan="7" class="tabla__vacia">Sin movimientos registrados.</td></tr>
+            <% } %>
+            <% movimientos.forEach((m) => { %>
+              <tr>
+                <td class="nowrap"><%= m.fecha ? fecha(m.fecha) : "Sin fecha" %></td>
+                <td>
+                  <span class="mov mov--<%= m.tipo.toLowerCase() %>"><%= ETIQUETA_MOV_REPUESTO[m.tipo] %></span>
+                  <% if (m.modalidad === "PRESTAMO") { %>
+                    <span class="texto-tenue">· préstamo<%= m.devuelto_en ? " (devuelto)" : "" %></span>
+                  <% } %>
+                </td>
+                <td class="num fuerte"><%= m.caso || "—" %></td>
+                <td><%= m.funcionario || m.nota || "—" %></td>
+                <td><%= m.tecnico || "—" %></td>
+                <td class="num cantidad--<%= m.tipo === "DEVOLUCION" ? "entrada" : m.tipo.toLowerCase() %>"><%= cantidadConSigno(m) %></td>
+                <td class="num"><%= m.stock_resultante ?? "—" %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <aside class="detalle__lateral">
+    <section class="panel" aria-labelledby="rep-editar-titulo">
+      <div class="panel__cabecera">
+        <h2 id="rep-editar-titulo" class="panel__titulo">Datos del artículo</h2>
+      </div>
+      <form class="panel__cuerpo" method="post" action="/repuestos/<%= repuesto.id %>">
+        <input type="hidden" name="volver" value="/repuestos/<%= repuesto.id %>" />
+        <%- include("_campos", { r: repuesto, prefijo: "rep-editar" }) %>
+        <button type="submit" class="btn btn--primario btn--bloque">Guardar cambios</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="rep-ajuste-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 id="rep-ajuste-titulo" class="panel__titulo">Corregir existencia</h2>
+          <p class="panel__desc">Para conteos físicos; queda registrado como ajuste.</p>
+        </div>
+      </div>
+      <form class="panel__cuerpo" method="post" action="/repuestos/<%= repuesto.id %>/ajuste">
+        <input type="hidden" name="volver" value="/repuestos/<%= repuesto.id %>" />
+        <div class="campos-2 campos-2--fijo">
+          <div class="campo">
+            <label for="rep-ajuste-stock">Existencia real</label>
+            <input class="control" type="number" id="rep-ajuste-stock" name="stock" min="0" value="<%= repuesto.stock %>" required />
+          </div>
+          <div class="campo">
+            <label for="rep-ajuste-nota">Motivo</label>
+            <input class="control" type="text" id="rep-ajuste-nota" name="nota" placeholder="Conteo mensual" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn--secundario btn--bloque">Registrar ajuste</button>
+      </form>
+    </section>
+
+    <section class="panel panel--peligro" aria-labelledby="rep-baja-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 id="rep-baja-titulo" class="panel__titulo">Dar de baja</h2>
+          <p class="panel__desc">Deja de listarse en el inventario. El historial se conserva.</p>
+        </div>
+      </div>
+      <div class="panel__cuerpo">
+        <button type="button" class="btn btn--peligro btn--bloque" data-abrir="dlg-rep-baja">Dar de baja este artículo</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<dialog id="dlg-rep-baja" class="dialogo dialogo--chico" aria-labelledby="dlg-rep-baja-titulo">
+  <form method="post" action="/repuestos/<%= repuesto.id %>/eliminar">
+    <input type="hidden" name="volver" value="/repuestos/<%= repuesto.id %>" />
+    <div class="dialogo__cabecera">
+      <h2 class="dialogo__titulo" id="dlg-rep-baja-titulo">¿Dar de baja <%= titulo %>?</h2>
+    </div>
+    <div class="dialogo__cuerpo">
+      <p>El artículo dejará de aparecer en el inventario. Su historial se conserva.</p>
+    </div>
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--peligro-solido">Dar de baja</button>
+    </div>
+  </form>
+</dialog>
+
+<%- include("_dialogos") %>

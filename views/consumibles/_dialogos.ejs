@@ -1,0 +1,145 @@
+<%#
+  Diálogos de insumos. Se abren con botones [data-abrir="id"];
+  si el botón trae data-consumible, ese insumo queda preseleccionado.
+%>
+<datalist id="lista-tecnicos">
+  <% sugerencias.tecnicos.forEach((t) => { %><option value="<%= t %>"></option><% }) %>
+</datalist>
+<datalist id="lista-lugares">
+  <% sugerencias.lugares.forEach((l) => { %><option value="<%= l %>"></option><% }) %>
+</datalist>
+
+<dialog id="dlg-entrega" class="dialogo" aria-labelledby="dlg-entrega-titulo">
+  <form method="post" action="/consumibles/movimientos">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-entrega-titulo">Registrar entrega</h2>
+        <p class="dialogo__desc">Descuenta del inventario y queda asociada al caso.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="tipo" value="SALIDA" />
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+
+      <div class="campo">
+        <label for="entrega-consumible">Insumo</label>
+        <select class="control" id="entrega-consumible" name="consumible_id" required data-seleccion>
+          <option value="">Seleccione un insumo…</option>
+          <% todos.forEach((c) => { %>
+            <option value="<%= c.id %>" <%= c.stock === 0 ? "disabled" : "" %>>
+              <%= nombreInsumo(c) %> · <%= c.marca %><%= c.impresora ? ` · ${c.impresora}` : "" %> — <%= c.stock %> disp.
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="campos-2">
+        <div class="campo">
+          <label for="entrega-caso">N.º de caso <span class="campo__opcional">(opcional)</span></label>
+          <input class="control" type="text" id="entrega-caso" name="caso" placeholder="2705295" inputmode="numeric" />
+        </div>
+        <div class="campo">
+          <label for="entrega-cantidad">Cantidad</label>
+          <input class="control" type="number" id="entrega-cantidad" name="cantidad" min="1" value="1" required />
+        </div>
+      </div>
+
+      <div class="campos-2">
+        <div class="campo">
+          <label for="entrega-tecnico">Técnico</label>
+          <input class="control" type="text" id="entrega-tecnico" name="tecnico" list="lista-tecnicos" autocomplete="off" required />
+        </div>
+        <div class="campo">
+          <label for="entrega-lugar">Lugar / servicio</label>
+          <input class="control" type="text" id="entrega-lugar" name="lugar" list="lista-lugares" autocomplete="off" placeholder="Plataforma Abajo 1" required />
+        </div>
+      </div>
+    </div>
+
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar entrega</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-ingreso" class="dialogo" aria-labelledby="dlg-ingreso-titulo">
+  <form method="post" action="/consumibles/movimientos">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-ingreso-titulo">Registrar ingreso</h2>
+        <p class="dialogo__desc">Suma unidades recibidas al inventario.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="tipo" value="ENTRADA" />
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+
+      <div class="campo">
+        <label for="ingreso-consumible">Insumo</label>
+        <select class="control" id="ingreso-consumible" name="consumible_id" required data-seleccion>
+          <option value="">Seleccione un insumo…</option>
+          <% todos.forEach((c) => { %>
+            <option value="<%= c.id %>">
+              <%= nombreInsumo(c) %> · <%= c.marca %><%= c.impresora ? ` · ${c.impresora}` : "" %> — existencia <%= c.stock %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="campos-2">
+        <div class="campo">
+          <label for="ingreso-cantidad">Cantidad recibida</label>
+          <input class="control" type="number" id="ingreso-cantidad" name="cantidad" min="1" value="1" required />
+        </div>
+        <div class="campo">
+          <label for="ingreso-nota">Referencia <span class="campo__opcional">(opcional)</span></label>
+          <input class="control" type="text" id="ingreso-nota" name="nota" placeholder="Pedido, factura…" />
+        </div>
+      </div>
+    </div>
+
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar ingreso</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-nuevo" class="dialogo" aria-labelledby="dlg-nuevo-titulo">
+  <form method="post" action="/consumibles">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-nuevo-titulo">Nuevo insumo</h2>
+        <p class="dialogo__desc">Tóner, tinta, cartucho u otro insumo de impresión.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+      <%- include("_campos-insumo", { c: {}, prefijo: "nuevo" }) %>
+      <div class="campos-3">
+        <div class="campo">
+          <label for="nuevo-stock">Existencia inicial</label>
+          <input class="control" type="number" id="nuevo-stock" name="stock" min="0" value="0" required />
+        </div>
+      </div>
+    </div>
+
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar insumo</button>
+    </div>
+  </form>
+</dialog>

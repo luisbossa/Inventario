@@ -1,0 +1,33 @@
+<%# Campos editables de un artículo de repuesto. Recibe `r` y `prefijo`. %>
+<div class="campo">
+  <label for="<%= prefijo %>-nombre">Nombre del artículo</label>
+  <input class="control" type="text" id="<%= prefijo %>-nombre" name="nombre" value="<%= r.nombre || '' %>" placeholder="Teclado, Cable HDMI a VGA…" required />
+</div>
+
+<div class="campos-3">
+  <div class="campo">
+    <label for="<%= prefijo %>-categoria">Categoría</label>
+    <select class="control" id="<%= prefijo %>-categoria" name="categoria">
+      <% CATEGORIAS.forEach((c) => { %>
+        <option value="<%= c %>" <%= (r.categoria || "Periférico") === c ? "selected" : "" %>><%= c %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-condicion">Condición</label>
+    <select class="control" id="<%= prefijo %>-condicion" name="condicion">
+      <% CONDICIONES.forEach((c) => { %>
+        <option value="<%= c %>" <%= (r.condicion || "Nuevo") === c ? "selected" : "" %>><%= c %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-minimo">Stock mínimo</label>
+    <input class="control" type="number" id="<%= prefijo %>-minimo" name="stock_minimo" min="0" value="<%= r.stock_minimo ?? 0 %>" required />
+  </div>
+</div>
+
+<div class="campo">
+  <label for="<%= prefijo %>-detalle">Detalle <span class="campo__opcional">(opcional)</span></label>
+  <input class="control" type="text" id="<%= prefijo %>-detalle" name="detalle" value="<%= r.detalle || '' %>" placeholder="Modelo, número de producto…" />
+</div>

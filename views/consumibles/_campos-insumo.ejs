@@ -1,0 +1,49 @@
+<%# Campos editables de un insumo (alta y edición). Recibe `c` y `prefijo`. %>
+<div class="campos-2">
+  <div class="campo">
+    <label for="<%= prefijo %>-tipo">Tipo de insumo</label>
+    <select class="control" id="<%= prefijo %>-tipo" name="tipo">
+      <% TIPOS_INSUMO.forEach((tipo) => { %>
+        <option value="<%= tipo %>" <%= (c.tipo || "Tóner") === tipo ? "selected" : "" %>><%= tipo %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-marca">Marca</label>
+    <input class="control" type="text" id="<%= prefijo %>-marca" name="marca" value="<%= c.marca || '' %>" placeholder="HP, Kyocera, Epson…" required />
+  </div>
+</div>
+
+<div class="campos-2">
+  <div class="campo">
+    <label for="<%= prefijo %>-codigo">Código</label>
+    <input class="control" type="text" id="<%= prefijo %>-codigo" name="codigo" value="<%= c.codigo || '' %>" placeholder="CF226XC" required />
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-impresora">Impresora compatible <span class="campo__opcional">(opcional)</span></label>
+    <input class="control" type="text" id="<%= prefijo %>-impresora" name="impresora" value="<%= c.impresora || '' %>" placeholder="HP M402DN" />
+  </div>
+</div>
+
+<div class="campos-3">
+  <div class="campo">
+    <label for="<%= prefijo %>-color">Color</label>
+    <select class="control" id="<%= prefijo %>-color" name="color">
+      <% COLORES.forEach((color) => { %>
+        <option value="<%= color %>" <%= (c.color || "NEGRO") === color ? "selected" : "" %>><%= capitalizar(color) %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-rendimiento">Rendimiento</label>
+    <select class="control" id="<%= prefijo %>-rendimiento" name="rendimiento">
+      <option value="" <%= !c.rendimiento ? "selected" : "" %>>Estándar</option>
+      <option value="BR" <%= c.rendimiento === "BR" ? "selected" : "" %>>Bajo (BR)</option>
+      <option value="AR" <%= c.rendimiento === "AR" ? "selected" : "" %>>Alto (AR)</option>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="<%= prefijo %>-minimo">Stock mínimo</label>
+    <input class="control" type="number" id="<%= prefijo %>-minimo" name="stock_minimo" min="0" value="<%= c.stock_minimo ?? 2 %>" required />
+  </div>
+</div>

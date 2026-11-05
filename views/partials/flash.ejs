@@ -1,0 +1,18 @@
+<% if (mensaje.ok) { %>
+  <div class="aviso aviso--ok" role="status">
+    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+    <span><%= mensaje.ok %></span>
+    <button type="button" class="aviso__cerrar" data-cerrar-aviso aria-label="Cerrar mensaje">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+<% } %>
+<% if (mensaje.error) { %>
+  <div class="aviso aviso--error" role="alert">
+    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+    <span><%= mensaje.error %></span>
+    <button type="button" class="aviso__cerrar" data-cerrar-aviso aria-label="Cerrar mensaje">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+<% } %>

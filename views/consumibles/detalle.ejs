@@ -1,0 +1,168 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo">
+      <%= consumible.codigo %>
+      <% if (consumible.rendimiento) { %><span class="etiqueta"><%= consumible.rendimiento %></span><% } %>
+    </h1>
+    <p class="encabezado__sub"><%= subtitulo %><%= consumible.impresora ? ` · ${consumible.impresora}` : "" %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <button type="button" class="btn btn--secundario" data-abrir="dlg-ingreso" data-consumible="<%= consumible.id %>">
+      <i class="fa-solid fa-arrow-down"></i> Registrar ingreso
+    </button>
+    <button type="button" class="btn btn--primario" data-abrir="dlg-entrega" data-consumible="<%= consumible.id %>" <%= consumible.stock === 0 ? "disabled" : "" %>>
+      <i class="fa-solid fa-arrow-up"></i> Registrar entrega
+    </button>
+  </div>
+</div>
+
+<div class="detalle">
+  <div class="detalle__principal">
+    <section class="panel" aria-labelledby="resumen-titulo">
+      <div class="panel__cabecera">
+        <h2 id="resumen-titulo" class="panel__titulo">Información general</h2>
+        <span class="estado estado--<%= consumible.estado %>"><%= ETIQUETA_ESTADO[consumible.estado] %></span>
+      </div>
+      <dl class="ficha">
+        <div>
+          <dt>Existencia</dt>
+          <dd class="ficha__grande"><%= consumible.stock %></dd>
+        </div>
+        <div>
+          <dt>Stock mínimo</dt>
+          <dd class="ficha__grande"><%= consumible.stock_minimo %></dd>
+        </div>
+        <div>
+          <dt>Tipo</dt>
+          <dd><%= consumible.tipo %></dd>
+        </div>
+        <div>
+          <dt>Marca</dt>
+          <dd><%= consumible.marca %></dd>
+        </div>
+        <div>
+          <dt>Color</dt>
+          <dd><span class="muestra muestra--<%= consumible.color.toLowerCase() %>"><%= capitalizar(consumible.color) %></span></dd>
+        </div>
+        <div>
+          <dt>Rendimiento</dt>
+          <dd><%= { BR: "Bajo", AR: "Alto" }[consumible.rendimiento] || "Estándar" %></dd>
+        </div>
+        <div>
+          <dt>Impresora compatible</dt>
+          <dd><%= consumible.impresora || "—" %></dd>
+        </div>
+        <div>
+          <dt>Última actualización</dt>
+          <dd><%= fecha(consumible.actualizado_en || consumible.creado_en) %></dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="historial-titulo">
+      <div class="panel__cabecera">
+        <h2 id="historial-titulo" class="panel__titulo">
+          Historial de movimientos <span class="contador"><%= movimientos.length %></span>
+        </h2>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Movimiento</th>
+              <th scope="col">N.º caso</th>
+              <th scope="col">Técnico</th>
+              <th scope="col">Lugar / referencia</th>
+              <th scope="col" class="num">Cantidad</th>
+              <th scope="col" class="num">Existencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (movimientos.length === 0) { %>
+              <tr><td colspan="7" class="tabla__vacia">Sin movimientos registrados.</td></tr>
+            <% } %>
+            <% movimientos.forEach((m) => { %>
+              <tr>
+                <td class="nowrap"><%= fecha(m.fecha) %></td>
+                <td><span class="mov mov--<%= m.tipo.toLowerCase() %>"><%= ETIQUETA_TIPO[m.tipo] %></span></td>
+                <td class="fuerte"><%= m.caso || "—" %></td>
+                <td><%= m.tecnico || "—" %></td>
+                <td><%= m.lugar || m.nota || "—" %></td>
+                <td class="num cantidad--<%= m.tipo.toLowerCase() %>"><%= cantidadConSigno(m) %></td>
+                <td class="num"><%= m.stock_resultante ?? "—" %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <aside class="detalle__lateral">
+    <section class="panel" aria-labelledby="editar-titulo">
+      <div class="panel__cabecera">
+        <h2 id="editar-titulo" class="panel__titulo">Datos del insumo</h2>
+      </div>
+      <form class="panel__cuerpo" method="post" action="/consumibles/<%= consumible.id %>">
+        <input type="hidden" name="volver" value="/consumibles/<%= consumible.id %>" />
+        <%- include("_campos-insumo", { c: consumible, prefijo: "editar" }) %>
+        <button type="submit" class="btn btn--primario btn--bloque">Guardar cambios</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="ajuste-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 id="ajuste-titulo" class="panel__titulo">Corregir existencia</h2>
+          <p class="panel__desc">Para conteos físicos; queda registrado como ajuste.</p>
+        </div>
+      </div>
+      <form class="panel__cuerpo" method="post" action="/consumibles/movimientos">
+        <input type="hidden" name="tipo" value="AJUSTE" />
+        <input type="hidden" name="consumible_id" value="<%= consumible.id %>" />
+        <input type="hidden" name="volver" value="/consumibles/<%= consumible.id %>" />
+        <div class="campos-2 campos-2--fijo">
+          <div class="campo">
+            <label for="ajuste-stock">Existencia real</label>
+            <input class="control" type="number" id="ajuste-stock" name="stock" min="0" value="<%= consumible.stock %>" required />
+          </div>
+          <div class="campo">
+            <label for="ajuste-nota">Motivo</label>
+            <input class="control" type="text" id="ajuste-nota" name="nota" placeholder="Conteo mensual" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn--secundario btn--bloque">Registrar ajuste</button>
+      </form>
+    </section>
+
+    <section class="panel panel--peligro" aria-labelledby="baja-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 id="baja-titulo" class="panel__titulo">Dar de baja</h2>
+          <p class="panel__desc">Deja de listarse en el inventario. El historial se conserva.</p>
+        </div>
+      </div>
+      <div class="panel__cuerpo">
+        <button type="button" class="btn btn--peligro btn--bloque" data-abrir="dlg-baja">Dar de baja este insumo</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<dialog id="dlg-baja" class="dialogo dialogo--chico" aria-labelledby="dlg-baja-titulo">
+  <form method="post" action="/consumibles/<%= consumible.id %>/eliminar">
+    <div class="dialogo__cabecera">
+      <h2 class="dialogo__titulo" id="dlg-baja-titulo">¿Dar de baja <%= titulo %>?</h2>
+    </div>
+    <div class="dialogo__cuerpo">
+      <p>El insumo dejará de aparecer en el inventario. Su historial de movimientos se conserva.</p>
+    </div>
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--peligro-solido">Dar de baja</button>
+    </div>
+  </form>
+</dialog>
+
+<%- include("_dialogos") %>

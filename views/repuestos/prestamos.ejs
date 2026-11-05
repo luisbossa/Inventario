@@ -1,0 +1,79 @@
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <p class="encabezado__sub"><%= subtitulo %></p>
+  </div>
+  <div class="encabezado__acciones">
+    <button type="button" class="btn btn--primario" data-abrir="dlg-rep-entrega" data-modalidad="PRESTAMO">
+      <i class="fa-solid fa-arrow-up"></i> Registrar préstamo
+    </button>
+  </div>
+</div>
+
+<section class="panel" aria-labelledby="prestamos-titulo">
+  <h2 id="prestamos-titulo" class="sr-only">Préstamos</h2>
+  <div class="herramientas">
+    <nav class="filtros-estado" aria-label="Estado del préstamo">
+      <a class="filtro-estado <%= estado === 'activos' ? 'is-active' : '' %>" href="/repuestos/prestamos">
+        Pendientes <span class="contador"><%= activos %></span>
+      </a>
+      <a class="filtro-estado <%= estado === 'devueltos' ? 'is-active' : '' %>" href="/repuestos/prestamos?estado=devueltos">
+        Devueltos
+      </a>
+    </nav>
+  </div>
+
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col" class="num">Caso</th>
+          <th scope="col">Funcionario / servicio</th>
+          <th scope="col">Artículo</th>
+          <th scope="col" class="num">Cant.</th>
+          <th scope="col">Prestado</th>
+          <% if (estado === "activos") { %>
+            <th scope="col" class="num">Días</th>
+            <th scope="col"><span class="sr-only">Acciones</span></th>
+          <% } else { %>
+            <th scope="col">Devuelto</th>
+          <% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (prestamos.length === 0) { %>
+          <tr>
+            <td colspan="7" class="tabla__vacia">
+              <%= estado === "activos" ? "No hay préstamos pendientes de devolución." : "Todavía no hay préstamos devueltos." %>
+            </td>
+          </tr>
+        <% } %>
+        <% prestamos.forEach((p) => { %>
+          <tr>
+            <td class="num fuerte"><%= p.caso || "—" %></td>
+            <td><%= p.funcionario %></td>
+            <td><a class="enlace" href="/repuestos/<%= p.repuesto_id %>"><%= nombreRepuesto(p) %></a></td>
+            <td class="num"><%= p.cantidad %></td>
+            <td class="nowrap"><%= fecha(p.fecha, { hora: false }) %><br /><span class="texto-tenue"><%= p.tecnico %></span></td>
+            <% if (estado === "activos") { %>
+              <td class="num <%= p.dias > 30 ? 'texto-alerta' : '' %>"><%= p.dias ?? "—" %></td>
+              <td>
+                <form class="acciones" method="post" action="/repuestos/prestamos/<%= p.id %>/devolver">
+                  <input type="hidden" name="volver" value="<%= rutaActual %>" />
+                  <button type="submit" class="btn btn--secundario btn--sm">Registrar devolución</button>
+                </form>
+              </td>
+            <% } else { %>
+              <td class="nowrap"><%= fecha(p.devuelto_en, { hora: false }) %></td>
+            <% } %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel__pie">
+    <span>Al registrar la devolución, las unidades vuelven a la existencia del artículo.</span>
+  </div>
+</section>
+
+<%- include("_dialogos") %>

@@ -1,0 +1,10 @@
+<%# Título de la página + acciones opcionales (pasar `acciones` como HTML). %>
+<div class="encabezado">
+  <div>
+    <h1 class="encabezado__titulo"><%= titulo %></h1>
+    <% if (subtitulo) { %><p class="encabezado__sub"><%= subtitulo %></p><% } %>
+  </div>
+  <% if (typeof acciones !== "undefined" && acciones) { %>
+    <div class="encabezado__acciones"><%- acciones %></div>
+  <% } %>
+</div>

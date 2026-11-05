@@ -1,0 +1,161 @@
+<%#
+  Diálogos de repuestos. Se abren con [data-abrir="id"]; con data-repuesto
+  el artículo queda preseleccionado (en la entrega, marcado).
+%>
+<datalist id="lista-funcionarios">
+  <% sugerenciasRep.funcionarios.forEach((f) => { %><option value="<%= f %>"></option><% }) %>
+</datalist>
+<datalist id="lista-entregadores">
+  <% sugerenciasRep.tecnicos.forEach((t) => { %><option value="<%= t %>"></option><% }) %>
+</datalist>
+
+<dialog id="dlg-rep-entrega" class="dialogo dialogo--ancho" aria-labelledby="dlg-rep-entrega-titulo">
+  <form method="post" action="/repuestos/entregas">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-rep-entrega-titulo">Registrar entrega a funcionario</h2>
+        <p class="dialogo__desc">Marque los artículos entregados en este caso.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+
+      <div class="campos-3">
+        <div class="campo">
+          <label for="rep-caso">N.º de caso</label>
+          <input class="control" type="text" id="rep-caso" name="caso" value="<%= siguienteCaso %>" data-valor-inicial="<%= siguienteCaso %>" required />
+        </div>
+        <div class="campo">
+          <label for="rep-fecha">Fecha</label>
+          <input class="control" type="date" id="rep-fecha" name="fecha" data-hoy required />
+        </div>
+        <div class="campo">
+          <label for="rep-tecnico">Entregado por</label>
+          <input class="control" type="text" id="rep-tecnico" name="tecnico" list="lista-entregadores" autocomplete="off" required />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="rep-funcionario">Funcionario / servicio</label>
+        <input class="control" type="text" id="rep-funcionario" name="funcionario" list="lista-funcionarios" autocomplete="off" placeholder="Jefatura Enfermería" required />
+      </div>
+
+      <fieldset class="opciones">
+        <legend>Modalidad</legend>
+        <label class="opcion">
+          <input type="radio" name="modalidad" value="DEFINITIVA" checked />
+          <span><strong>Entrega definitiva</strong><small>Sustitución; no se espera devolución.</small></span>
+        </label>
+        <label class="opcion">
+          <input type="radio" name="modalidad" value="PRESTAMO" />
+          <span><strong>Préstamo</strong><small>Queda pendiente hasta registrar la devolución.</small></span>
+        </label>
+      </fieldset>
+
+      <div class="campo">
+        <div class="articulos__cabecera">
+          <span class="articulos__titulo">Artículos</span>
+          <input class="control control--sm articulos__buscar" type="search" placeholder="Filtrar artículos" aria-label="Filtrar artículos" data-filtrar-articulos />
+        </div>
+        <div class="articulos" data-articulos>
+          <% CATEGORIAS.forEach((categoria) => { %>
+            <% const grupo = todos.filter((r) => r.categoria === categoria); %>
+            <% if (grupo.length) { %>
+              <div class="articulos__grupo"><%= categoria === "Cable" ? "Cables" : categoria === "Periférico" ? "Periféricos" : "Varios" %></div>
+              <% grupo.forEach((r) => { %>
+                <label class="articulo <%= r.stock === 0 ? 'articulo--sin-stock' : '' %>" data-nombre="<%= nombreRepuesto(r).toLowerCase() %>">
+                  <input type="checkbox" name="articulo" value="<%= r.id %>" <%= r.stock === 0 ? "disabled" : "" %> data-articulo />
+                  <span class="articulo__nombre"><%= nombreRepuesto(r) %></span>
+                  <span class="articulo__disp"><%= r.stock === 0 ? "Sin existencia" : `${r.stock} disp.` %></span>
+                  <input class="control control--sm articulo__cant" type="number" name="cantidad_<%= r.id %>" min="1" max="<%= r.stock %>" value="1" disabled aria-label="Cantidad de <%= nombreRepuesto(r) %>" />
+                </label>
+              <% }) %>
+            <% } %>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="rep-nota">Observación <span class="campo__opcional">(opcional)</span></label>
+        <input class="control" type="text" id="rep-nota" name="nota" />
+      </div>
+    </div>
+
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-rep-ingreso" class="dialogo" aria-labelledby="dlg-rep-ingreso-titulo">
+  <form method="post" action="/repuestos/ingreso">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-rep-ingreso-titulo">Registrar ingreso</h2>
+        <p class="dialogo__desc">Suma unidades recibidas a la existencia.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+      <div class="campo">
+        <label for="rep-ingreso-articulo">Artículo</label>
+        <select class="control" id="rep-ingreso-articulo" name="repuesto_id" required data-seleccion>
+          <option value="">Seleccione un artículo…</option>
+          <% todos.forEach((r) => { %>
+            <option value="<%= r.id %>"><%= nombreRepuesto(r) %> · <%= r.categoria %> — existencia <%= r.stock %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="campos-2">
+        <div class="campo">
+          <label for="rep-ingreso-cantidad">Cantidad recibida</label>
+          <input class="control" type="number" id="rep-ingreso-cantidad" name="cantidad" min="1" value="1" required />
+        </div>
+        <div class="campo">
+          <label for="rep-ingreso-nota">Referencia <span class="campo__opcional">(opcional)</span></label>
+          <input class="control" type="text" id="rep-ingreso-nota" name="nota" placeholder="Compra, donación, reintegro…" />
+        </div>
+      </div>
+    </div>
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar ingreso</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-rep-nuevo" class="dialogo" aria-labelledby="dlg-rep-nuevo-titulo">
+  <form method="post" action="/repuestos">
+    <div class="dialogo__cabecera">
+      <div>
+        <h2 class="dialogo__titulo" id="dlg-rep-nuevo-titulo">Nuevo artículo</h2>
+        <p class="dialogo__desc">Periférico, artículo varios o cable.</p>
+      </div>
+      <button type="button" class="btn btn--fantasma btn--icono" data-cerrar aria-label="Cerrar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="dialogo__cuerpo">
+      <input type="hidden" name="volver" value="<%= rutaActual %>" />
+      <%- include("_campos", { r: {}, prefijo: "rep-nuevo" }) %>
+      <div class="campos-3">
+        <div class="campo">
+          <label for="rep-nuevo-stock">Existencia inicial</label>
+          <input class="control" type="number" id="rep-nuevo-stock" name="stock" min="0" value="0" required />
+        </div>
+      </div>
+    </div>
+    <div class="dialogo__pie">
+      <button type="button" class="btn btn--secundario" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn--primario">Registrar artículo</button>
+    </div>
+  </form>
+</dialog>

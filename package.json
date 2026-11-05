@@ -1,0 +1,22 @@
+{
+  "name": "inventario-cgi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Inventario de insumos - CGI Área de Salud Naranjo",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js",
+    "test-server": "node --check server/index.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-ejs-layouts": "^2.5.1"
+  }
+}
