@@ -1,21 +1,23 @@
 import express from "express";
 import expressLayouts from "express-ejs-layouts";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import apiRouter from "./routes/api.js";
 import webRouter from "./routes/web.js";
 import repuestosRouter from "./routes/repuestos.js";
 import * as vistas from "./vistas.js";
 
-// Usar process.cwd() garantiza encontrar las carpetas tanto en Local, IIS como en Vercel
-const ROOT_DIR = process.cwd();
+// Obtenemos la carpeta actual (server) y la raíz real del proyecto (un nivel arriba)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = join(__dirname, "..");
+
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-// Indicar a Express que confíe en el reverse proxy (IIS / Vercel)
 app.set("trust proxy", true);
 
-// Configuración de motor de vistas EJS
+// Configuración de motor de vistas EJS (Ahora apunta a la raíz/views)
 app.set("view engine", "ejs");
 app.set("views", join(ROOT_DIR, "views"));
 app.set("layout", "layouts/main");
@@ -23,7 +25,7 @@ app.set("layout extractStyles", true);
 app.set("layout extractScripts", true);
 app.use(expressLayouts);
 
-// Archivos estáticos
+// Archivos estáticos (Ahora apuntan a la raíz/public e images)
 app.use(express.static(join(ROOT_DIR, "public")));
 app.use("/images", express.static(join(ROOT_DIR, "images")));
 
@@ -43,12 +45,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Enrutadores
+// Rutas
 app.use("/api", apiRouter);
 app.use("/repuestos", repuestosRouter);
 app.use("/", webRouter);
 
-// Manejador de 404 (No encontrado)
+// Manejador de 404
 app.use((req, res) => {
   res.status(404).render("error", {
     titulo: "No encontrado",
@@ -58,7 +60,7 @@ app.use((req, res) => {
   });
 });
 
-// Manejador centralizado de errores
+// Manejador de errores
 app.use((err, req, res, next) => {
   const status = err.status || (err.type === "entity.parse.failed" ? 400 : 500);
   if (status >= 500) console.error(err);
@@ -75,7 +77,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// EN VERCEL NO SE USA APP.LISTEN, SOLO EN LOCAL O IIS
+// Servidor
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     if (isNaN(PORT)) {
@@ -86,5 +88,4 @@ if (!process.env.VERCEL) {
   });
 }
 
-// ESTA LÍNEA ES OBLIGATORIA PARA QUE VERCEL FUNCIONE
 export default app;
