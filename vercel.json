@@ -8,7 +8,7 @@
         "includeFiles": [
           "views/**",
           "public/**",
-          "images/**"
+          "data/**"
         ]
       }
     }
