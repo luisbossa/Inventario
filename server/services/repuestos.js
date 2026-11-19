@@ -446,3 +446,15 @@ export function registrarEntregaHistorica({ repuestoId, caso, funcionario, tecni
     historico: true,
   });
 }
+
+/** Unidades entregadas por mes ("2026-10") desde la fecha indicada (para el gráfico del panel). */
+export function entregasPorMes(desde) {
+  return db
+    .prepare(
+      `SELECT substr(COALESCE(fecha, creado_en), 1, 7) AS mes, SUM(cantidad) AS total
+         FROM repuesto_movimientos
+        WHERE tipo = 'SALIDA' AND COALESCE(fecha, creado_en) >= ?
+        GROUP BY mes`,
+    )
+    .all(desde);
+}

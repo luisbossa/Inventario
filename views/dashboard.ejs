@@ -1,218 +1,165 @@
-<div class="encabezado">
-  <div>
-    <h1 class="encabezado__titulo"><%= titulo %></h1>
-    <p class="encabezado__sub"><%= subtitulo %></p>
-  </div>
-  <div class="encabezado__acciones">
-    <a class="btn btn--secundario" href="/consumibles">Ver inventario</a>
-    <a class="btn btn--primario" href="/consumibles/movimientos">
-      <i class="fa-solid fa-right-left"></i> Movimientos
-    </a>
-  </div>
-</div>
+<%
+  const alertasInsumos = resumen.total_alertas;
+  const alertasRepuestos = repResumen.por_reponer;
+  const accesos = [
+    {
+      href: "/consumibles",
+      color: "azul",
+      icono: "fa-print",
+      titulo: "Tóner y tintas",
+      texto: `${resumen.total_modelos} modelos · ${resumen.total_unidades} unidades`,
+      alerta: alertasInsumos ? `${alertasInsumos} por reponer` : null,
+    },
+    {
+      href: "/repuestos",
+      color: "verde",
+      icono: "fa-keyboard",
+      titulo: "Repuestos y periféricos",
+      texto: `${repResumen.total_articulos} artículos · ${repResumen.total_unidades} unidades`,
+      alerta: alertasRepuestos ? `${alertasRepuestos} por reponer` : null,
+    },
+    {
+      href: "/consumibles/movimientos",
+      color: "naranja",
+      icono: "fa-clipboard-list",
+      titulo: "Registro de movimientos",
+      texto: `${resumen.entregas_mes} insumos entregados este mes`,
+    },
+    {
+      href: "/repuestos/entregas",
+      color: "morado",
+      icono: "fa-people-arrows",
+      titulo: "Entregas a funcionarios",
+      texto: `${repResumen.entregas_mes} repuestos entregados este mes`,
+    },
+    {
+      href: "/repuestos/prestamos",
+      color: "rosa",
+      icono: "fa-clock-rotate-left",
+      titulo: "Préstamos",
+      texto: repResumen.prestamos_activos
+        ? `${repResumen.prestamos_activos} pendiente(s) de devolución`
+        : "Sin préstamos pendientes",
+    },
+    {
+      href: "/consumibles/exportar.csv",
+      color: "turquesa",
+      icono: "fa-chart-column",
+      titulo: "Reportes",
+      texto: "Descargar inventario y entregas en Excel",
+    },
+  ];
+%>
 
-<section class="metricas" aria-label="Resumen">
-  <a class="metrica" href="/consumibles">
-    <span class="metrica__etiqueta">Insumos registrados</span>
-    <span class="metrica__valor"><%= resumen.total_modelos %></span>
-    <span class="metrica__nota">Modelos activos</span>
-  </a>
-  <div class="metrica">
-    <span class="metrica__etiqueta">Unidades en existencia</span>
-    <span class="metrica__valor"><%= resumen.total_unidades %></span>
-    <span class="metrica__nota">Total en bodega</span>
-  </div>
-  <a class="metrica <%= resumen.total_alertas ? 'metrica--alerta' : '' %>" href="/consumibles?estado=bajo">
-    <span class="metrica__etiqueta">Requieren reposición</span>
-    <span class="metrica__valor"><%= resumen.total_alertas %></span>
-    <span class="metrica__nota"><%= resumen.por_estado.agotado %> sin stock</span>
-  </a>
-  <a class="metrica" href="/consumibles/movimientos">
-    <span class="metrica__etiqueta">Entregas del mes</span>
-    <span class="metrica__valor"><%= resumen.entregas_mes %></span>
-    <span class="metrica__nota">Unidades entregadas</span>
-  </a>
+<section class="bienvenida">
+  <h1 class="bienvenida__titulo">¿Qué querés hacer hoy?</h1>
+  <p class="bienvenida__sub">Elegí un apartado para entrar</p>
 </section>
 
-<div class="rejilla-2">
-  <section class="panel" aria-labelledby="reponer-titulo">
-    <div class="panel__cabecera">
-      <div>
-        <h2 id="reponer-titulo" class="panel__titulo">Insumos por reponer</h2>
-        <p class="panel__desc">En o por debajo del stock mínimo</p>
-      </div>
-      <a class="enlace" href="/consumibles?estado=bajo">Ver todos</a>
-    </div>
-    <div class="tabla-contenedor">
-      <table class="tabla tabla--compacta">
-        <thead>
-          <tr>
-            <th scope="col">Insumo</th>
-            <th scope="col">Impresora</th>
-            <th scope="col" class="num">Existencia</th>
-            <th scope="col" class="num">Mínimo</th>
-            <th scope="col">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (porReponer.length === 0) { %>
-            <tr><td colspan="5" class="tabla__vacia">Todos los insumos están sobre su stock mínimo.</td></tr>
-          <% } %>
-          <% porReponer.forEach((c) => { %>
-            <tr>
-              <td>
-                <a class="insumo" href="/consumibles/<%= c.id %>">
-                  <span class="insumo__codigo"><%= nombreInsumo(c) %></span>
-                  <span class="insumo__marca"><%= c.tipo %> · <%= c.marca %></span>
-                </a>
-              </td>
-              <td><%= c.impresora || "—" %></td>
-              <td class="num fuerte"><%= c.stock %></td>
-              <td class="num"><%= c.stock_minimo %></td>
-              <td><span class="estado estado--<%= c.estado %>"><%= ETIQUETA_ESTADO[c.estado] %></span></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </section>
+<nav class="accesos" aria-label="Apartados">
+  <% accesos.forEach((a) => { %>
+    <a class="acceso acceso--<%= a.color %>" href="<%= a.href %>">
+      <span class="acceso__icono" aria-hidden="true"><i class="fa-solid <%= a.icono %>"></i></span>
+      <span class="acceso__titulo"><%= a.titulo %></span>
+      <span class="acceso__texto"><%= a.texto %></span>
+      <% if (a.alerta) { %>
+        <span class="acceso__alerta"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= a.alerta %></span>
+      <% } %>
+    </a>
+  <% }) %>
+</nav>
 
-  <section class="panel" aria-labelledby="lugar-titulo">
+<div class="graficos-fila graficos-fila--principal">
+  <section class="panel panel--color panel--azul" aria-labelledby="mes-titulo">
     <div class="panel__cabecera">
       <div>
-        <h2 id="lugar-titulo" class="panel__titulo">Consumo por lugar</h2>
-        <p class="panel__desc">Unidades entregadas</p>
+        <h2 id="mes-titulo" class="panel__titulo">
+          <i class="fa-solid fa-chart-column" aria-hidden="true"></i> Entregas por mes
+        </h2>
+        <p class="panel__desc">Unidades entregadas en los últimos 6 meses</p>
       </div>
     </div>
     <div class="panel__cuerpo">
-      <%- include("partials/barras", { filas: porLugar, vacio: "Sin entregas registradas." }) %>
+      <%- include("partials/grafico-meses", { meses: porMes }) %>
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="ultimas-titulo">
-    <div class="panel__cabecera">
-      <h2 id="ultimas-titulo" class="panel__titulo">Últimas entregas</h2>
-      <a class="enlace" href="/consumibles/movimientos">Ver historial</a>
-    </div>
-    <div class="tabla-contenedor">
-      <table class="tabla tabla--compacta">
-        <thead>
-          <tr>
-            <th scope="col">N.º caso</th>
-            <th scope="col">Técnico</th>
-            <th scope="col">Lugar</th>
-            <th scope="col">Insumo</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (entregas.length === 0) { %>
-            <tr><td colspan="4" class="tabla__vacia">Sin entregas registradas.</td></tr>
-          <% } %>
-          <% entregas.forEach((m) => { %>
-            <tr>
-              <td class="fuerte"><%= m.caso || "—" %></td>
-              <td><%= m.tecnico || "—" %></td>
-              <td><%= m.lugar || "—" %></td>
-              <td><a class="enlace" href="/consumibles/<%= m.consumible_id %>"><%= nombreInsumo(m) %></a></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel" aria-labelledby="tecnico-titulo">
+  <section class="panel panel--color panel--verde" aria-labelledby="estado-titulo">
     <div class="panel__cabecera">
       <div>
-        <h2 id="tecnico-titulo" class="panel__titulo">Entregas por técnico</h2>
-        <p class="panel__desc">Unidades entregadas</p>
+        <h2 id="estado-titulo" class="panel__titulo">
+          <i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Estado del inventario
+        </h2>
+        <p class="panel__desc">Artículos según su existencia</p>
       </div>
     </div>
     <div class="panel__cuerpo">
-      <%- include("partials/barras", { filas: porTecnico, vacio: "Sin entregas registradas." }) %>
+      <%- include("partials/grafico-estado", { filas: estados }) %>
     </div>
   </section>
 </div>
 
-<div class="encabezado encabezado--seccion">
-  <div>
-    <h2 class="encabezado__titulo encabezado__titulo--seccion">Repuestos</h2>
-    <p class="encabezado__sub">
-      <%= repResumen.total_articulos %> artículos · <%= repResumen.total_unidades %> unidades en existencia ·
-      <%= repResumen.prestamos_activos %> prestada(s)
-    </p>
-  </div>
-  <div class="encabezado__acciones">
-    <a class="btn btn--secundario" href="/repuestos">Ver repuestos</a>
-  </div>
-</div>
-
-<div class="rejilla-2">
-  <section class="panel" aria-labelledby="rep-reponer-titulo">
+<div class="graficos-fila">
+  <section class="panel panel--color panel--azul" aria-labelledby="lugar-titulo">
     <div class="panel__cabecera">
-      <div>
-        <h2 id="rep-reponer-titulo" class="panel__titulo">Repuestos por reponer</h2>
-        <p class="panel__desc">Sin existencia o en el mínimo</p>
-      </div>
-      <a class="enlace" href="/repuestos?estado=agotado">Ver todos</a>
+      <h2 id="lugar-titulo" class="panel__titulo">
+        <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Consumo por lugar
+      </h2>
     </div>
-    <div class="tabla-contenedor">
-      <table class="tabla tabla--compacta">
-        <thead>
-          <tr>
-            <th scope="col">Artículo</th>
-            <th scope="col">Categoría</th>
-            <th scope="col" class="num">Existencia</th>
-            <th scope="col">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (repPorReponer.length === 0) { %>
-            <tr><td colspan="4" class="tabla__vacia">Todos los repuestos tienen existencia.</td></tr>
-          <% } %>
-          <% repPorReponer.forEach((r) => { %>
-            <tr>
-              <td><a class="enlace" href="/repuestos/<%= r.id %>"><%= nombreRepuesto(r) %></a></td>
-              <td><%= r.categoria %></td>
-              <td class="num fuerte"><%= r.stock %></td>
-              <td><span class="estado estado--<%= r.estado %>"><%= ETIQUETA_ESTADO[r.estado] %></span></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+    <div class="panel__cuerpo">
+      <%- include("partials/barras", { filas: porLugar, color: "azul", vacio: "Sin entregas registradas." }) %>
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="rep-prestamos-titulo">
+  <section class="panel panel--color panel--morado" aria-labelledby="tecnico-titulo">
     <div class="panel__cabecera">
-      <div>
-        <h2 id="rep-prestamos-titulo" class="panel__titulo">Préstamos pendientes</h2>
-        <p class="panel__desc">Más antiguos primero</p>
-      </div>
-      <a class="enlace" href="/repuestos/prestamos">Ver todos</a>
+      <h2 id="tecnico-titulo" class="panel__titulo">
+        <i class="fa-solid fa-user-gear" aria-hidden="true"></i> Entregas por técnico
+      </h2>
     </div>
-    <div class="tabla-contenedor">
-      <table class="tabla tabla--compacta">
-        <thead>
-          <tr>
-            <th scope="col">Funcionario</th>
-            <th scope="col">Artículo</th>
-            <th scope="col" class="num">Días</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (repPrestamos.length === 0) { %>
-            <tr><td colspan="3" class="tabla__vacia">No hay préstamos pendientes.</td></tr>
-          <% } %>
-          <% repPrestamos.forEach((p) => { %>
-            <tr>
-              <td><%= p.funcionario %></td>
-              <td><%= nombreRepuesto(p) %><%= p.cantidad > 1 ? ` × ${p.cantidad}` : "" %></td>
-              <td class="num <%= p.dias > 30 ? 'texto-alerta' : '' %>"><%= p.dias ?? "—" %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+    <div class="panel__cuerpo">
+      <%- include("partials/barras", { filas: porTecnico, color: "morado", vacio: "Sin entregas registradas." }) %>
+    </div>
+  </section>
+
+  <section class="panel panel--color panel--turquesa" aria-labelledby="marca-titulo">
+    <div class="panel__cabecera">
+      <h2 id="marca-titulo" class="panel__titulo">
+        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Existencias por marca
+      </h2>
+    </div>
+    <div class="panel__cuerpo">
+      <%- include("partials/barras", { filas: porMarca, color: "turquesa", vacio: "Sin insumos en existencia." }) %>
     </div>
   </section>
 </div>
+
+<section class="panel panel--color panel--rojo" aria-labelledby="reponer-titulo">
+  <div class="panel__cabecera">
+    <h2 id="reponer-titulo" class="panel__titulo">
+      <i class="fa-solid fa-box-open" aria-hidden="true"></i> Necesitan reposición
+      <span class="contador"><%= porReponer.length %></span>
+    </h2>
+    <% if (porReponer.length > 0) { %>
+      <div class="encabezado__acciones">
+        <a class="enlace" href="/consumibles?estado=bajo">Ver insumos</a>
+        <a class="enlace" href="/repuestos?estado=agotado">Ver repuestos</a>
+      </div>
+    <% } %>
+  </div>
+  <% if (porReponer.length === 0) { %>
+    <p class="panel__cuerpo ayuda">Todo está sobre su stock mínimo. 🎉</p>
+  <% } else { %>
+    <ul class="lista-reponer">
+      <% porReponer.slice(0, 10).forEach((r) => { %>
+        <li>
+          <a href="<%= r.href %>">
+            <span class="lista-reponer__nombre"><%= r.nombre %></span>
+            <span class="lista-reponer__detalle"><%= r.detalle %></span>
+          </a>
+          <span class="estado estado--<%= r.estado %>"><%= r.stock %> · <%= ETIQUETA_ESTADO[r.estado] %></span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

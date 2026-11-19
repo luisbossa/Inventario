@@ -287,3 +287,30 @@ export function sugerencias() {
       .map((f) => f.valor);
   return { tecnicos: distintos("tecnico"), lugares: distintos("lugar") };
 }
+
+/** Unidades entregadas por mes ("2026-10") desde la fecha indicada (para el gráfico del panel). */
+export function entregasPorMes(desde) {
+  return db
+    .prepare(
+      `SELECT substr(fecha, 1, 7) AS mes, SUM(cantidad) AS total
+         FROM movimientos
+        WHERE tipo = 'SALIDA' AND fecha >= ?
+        GROUP BY mes`,
+    )
+    .all(desde);
+}
+
+/** Unidades en existencia por marca (para el gráfico del panel). */
+export function existenciasPorMarca(limite = 6) {
+  return db
+    .prepare(
+      `SELECT marca AS nombre, SUM(stock) AS total
+         FROM consumibles
+        WHERE activo = 1
+        GROUP BY marca
+        HAVING total > 0
+        ORDER BY total DESC, nombre
+        LIMIT ?`,
+    )
+    .all(limite);
+}

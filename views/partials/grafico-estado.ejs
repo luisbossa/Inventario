@@ -1,0 +1,48 @@
+<%#
+  Barras apiladas al 100 %: cuántos artículos están disponibles, por reponer o sin stock.
+  Recibe `filas` [{ nombre, ok, bajo, agotado }].
+%>
+<%
+  const tramos = [
+    { clave: "ok", nombre: "Disponible", icono: "fa-circle-check" },
+    { clave: "bajo", nombre: "Reponer", icono: "fa-triangle-exclamation" },
+    { clave: "agotado", nombre: "Sin stock", icono: "fa-circle-xmark" },
+  ];
+%>
+<div class="apiladas">
+  <% filas.forEach((f) => { %>
+    <% const total = f.ok + f.bajo + f.agotado; %>
+    <div class="apiladas__fila">
+      <div class="apiladas__titulo">
+        <span><%= f.nombre %></span>
+        <span class="texto-tenue"><%= total %> artículo(s)</span>
+      </div>
+      <% if (total === 0) { %>
+        <div class="apiladas__barra apiladas__barra--vacia">Sin artículos registrados</div>
+      <% } else { %>
+        <div class="apiladas__barra">
+          <% tramos.forEach((t) => { %>
+            <% if (f[t.clave] > 0) { %>
+              <% const pct = (f[t.clave] / total) * 100; %>
+              <span class="tramo tramo--<%= t.clave %>" style="flex-grow: <%= f[t.clave] %>" tabindex="0"
+                    data-tip="<strong><%= f.nombre %></strong><span><i class='tramo--<%= t.clave %>'></i><%= t.nombre %>: <b><%= f[t.clave] %></b> (<%= Math.round(pct) %> %)</span>"
+                    aria-label="<%= f.nombre %>, <%= t.nombre %>: <%= f[t.clave] %>">
+                <% if (pct >= 12) { %><%= f[t.clave] %><% } %>
+              </span>
+            <% } %>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  <% }) %>
+</div>
+
+<ul class="leyenda leyenda--estado">
+  <% tramos.forEach((t) => { %>
+    <li>
+      <i class="fa-solid <%= t.icono %> icono--<%= t.clave %>" aria-hidden="true"></i>
+      <%= t.nombre %>
+      <b><%= filas.reduce((s, f) => s + f[t.clave], 0) %></b>
+    </li>
+  <% }) %>
+</ul>

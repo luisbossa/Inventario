@@ -1,9 +1,12 @@
-<%# Lista de barras horizontales. Recibe `filas` [{nombre, total}] y `vacio`. %>
+<%#
+  Lista de barras horizontales (una sola serie, un solo color).
+  Recibe `filas` [{nombre, total}], `vacio` y opcionalmente `color` (azul, morado, turquesa...).
+%>
 <% if (filas.length === 0) { %>
   <p class="ayuda"><%= vacio %></p>
 <% } else { %>
   <% const maximo = Math.max(...filas.map((f) => f.total)); %>
-  <ul class="barras">
+  <ul class="barras barras--<%= typeof color !== 'undefined' ? color : 'azul' %>">
     <% filas.forEach((f) => { %>
       <li class="barras__fila">
         <span class="barras__nombre" title="<%= f.nombre %>"><%= f.nombre %></span>

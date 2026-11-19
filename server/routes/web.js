@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as servicio from "../services/consumibles.js";
 import * as repuestos from "../services/repuestos.js";
-import { nombreInsumo, ETIQUETA_ESTADO } from "../vistas.js";
+import { nombreInsumo, nombreRepuesto, ETIQUETA_ESTADO } from "../vistas.js";
 import { accion } from "./acciones.js";
 
 const router = Router();
@@ -13,22 +13,76 @@ function datosDialogos(todos = servicio.listar()) {
 
 // ---------- Panel ----------
 
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
+
+/** Entregas de insumos y repuestos de los últimos `n` meses (incluye el actual, con ceros). */
+function entregasUltimosMeses(n) {
+  const hoy = new Date();
+  const meses = Array.from({ length: n }, (_, i) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - (n - 1 - i), 1);
+    const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return { clave, etiqueta: MESES[d.getMonth()], anio: d.getFullYear() };
+  });
+  const desde = `${meses[0].clave}-01`;
+  const aMapa = (filas) => Object.fromEntries(filas.map((f) => [f.mes, f.total]));
+  const insumos = aMapa(servicio.entregasPorMes(desde));
+  const reps = aMapa(repuestos.entregasPorMes(desde));
+  return meses.map((m) => ({
+    ...m,
+    insumos: insumos[m.clave] || 0,
+    repuestos: reps[m.clave] || 0,
+  }));
+}
+
 router.get("/", (req, res) => {
-  res.render("dashboard", {
-    titulo: "Panel general",
-    subtitulo: "Estado del inventario de insumos de impresión y repuestos",
-    seccion: "panel",
-    resumen: servicio.resumen(),
-    porReponer: servicio
+  // Insumos y repuestos que necesitan reposición, en una sola lista
+  const porReponer = [
+    ...servicio
       .listar()
       .filter((c) => c.estado !== "ok")
-      .sort((a, b) => a.stock - b.stock || a.codigo.localeCompare(b.codigo)),
-    entregas: servicio.listarMovimientos({ tipo: "SALIDA", limit: 8 }),
+      .map((c) => ({
+        nombre: nombreInsumo(c),
+        detalle: `${c.tipo} · ${c.marca}`,
+        href: `/consumibles/${c.id}`,
+        stock: c.stock,
+        estado: c.estado,
+      })),
+    ...repuestos
+      .listar()
+      .filter((r) => r.estado !== "ok")
+      .map((r) => ({
+        nombre: nombreRepuesto(r),
+        detalle: r.categoria,
+        href: `/repuestos/${r.id}`,
+        stock: r.stock,
+        estado: r.estado,
+      })),
+  ].sort((a, b) => a.stock - b.stock || a.nombre.localeCompare(b.nombre));
+
+  const resumen = servicio.resumen();
+  const repResumen = repuestos.resumen();
+  const listaRepuestos = repuestos.listar();
+  const contar = (lista, estado) => lista.filter((r) => r.estado === estado).length;
+
+  res.render("dashboard", {
+    titulo: "Inicio",
+    seccion: "panel",
+    resumen,
+    repResumen,
+    porReponer,
     porLugar: servicio.entregasAgrupadas("lugar"),
     porTecnico: servicio.entregasAgrupadas("tecnico"),
-    repResumen: repuestos.resumen(),
-    repPorReponer: repuestos.listar().filter((r) => r.estado !== "ok"),
-    repPrestamos: repuestos.listarPrestamos({ estado: "activos" }).slice(0, 8),
+    porMarca: servicio.existenciasPorMarca(),
+    porMes: entregasUltimosMeses(6),
+    estados: [
+      { nombre: "Insumos", ...resumen.por_estado },
+      {
+        nombre: "Repuestos",
+        ok: contar(listaRepuestos, "ok"),
+        bajo: contar(listaRepuestos, "bajo"),
+        agotado: contar(listaRepuestos, "agotado"),
+      },
+    ],
   });
 });
 

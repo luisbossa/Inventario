@@ -160,3 +160,33 @@ document.addEventListener("DOMContentLoaded", () => {
   if (ok) setTimeout(() => ok.remove(), 6000);
   limpiarMensajeDeUrl();
 });
+
+// Tooltip de los gráficos: cualquier elemento con data-tip (contenido fijo armado en el servidor).
+const tooltip = Object.assign(document.createElement("div"), { className: "tooltip", hidden: true });
+tooltip.setAttribute("role", "tooltip");
+document.body.append(tooltip);
+
+function mostrarTooltip(el, x, y) {
+  tooltip.innerHTML = el.dataset.tip;
+  tooltip.hidden = false;
+  const { width, height } = tooltip.getBoundingClientRect();
+  const izq = Math.min(Math.max(8, x + 14), window.innerWidth - width - 8);
+  const arriba = y - height - 12 < 8 ? y + 16 : y - height - 12;
+  tooltip.style.left = `${izq}px`;
+  tooltip.style.top = `${arriba}px`;
+}
+
+document.addEventListener("pointermove", (e) => {
+  const el = e.target.closest?.("[data-tip]");
+  if (el) mostrarTooltip(el, e.clientX, e.clientY);
+  else tooltip.hidden = true;
+});
+
+document.addEventListener("focusin", (e) => {
+  const el = e.target.closest?.("[data-tip]");
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  mostrarTooltip(el, r.left + r.width / 2, r.top);
+});
+
+document.addEventListener("focusout", () => (tooltip.hidden = true));

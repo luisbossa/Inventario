@@ -1,0 +1,61 @@
+<%#
+  Columnas agrupadas: entregas por mes de insumos y repuestos.
+  Recibe `meses` [{ etiqueta, anio, insumos, repuestos }].
+%>
+<%
+  const series = [
+    { clave: "insumos", nombre: "Insumos", clase: "serie-1" },
+    { clave: "repuestos", nombre: "Repuestos", clase: "serie-2" },
+  ];
+  const ancho = 640, alto = 240;
+  const m = { izq: 34, der: 8, arr: 14, abj: 28 };
+  const plotW = ancho - m.izq - m.der;
+  const plotH = alto - m.arr - m.abj;
+
+  // Escala con números redondos (1, 2, 5, 10, 20, 50...)
+  const maximo = Math.max(1, ...meses.flatMap((x) => series.map((s) => x[s.clave])));
+  const crudo = maximo / 4;
+  const potencia = 10 ** Math.floor(Math.log10(crudo));
+  const paso = Math.max(1, [1, 2, 5, 10].map((f) => f * potencia).find((v) => v >= crudo));
+  const tope = Math.ceil(maximo / paso) * paso;
+  const marcas = Array.from({ length: tope / paso + 1 }, (_, i) => i * paso);
+  const y = (v) => m.arr + plotH - (v / tope) * plotH;
+
+  const grupoW = plotW / meses.length;
+  const barraW = Math.min(24, grupoW * 0.3);
+  const separacion = 2;
+
+  // Barra con las esquinas de arriba redondeadas, apoyada en la base
+  const barra = (x, v) => {
+    const alto = (v / tope) * plotH;
+    const r = Math.min(4, alto, barraW / 2);
+    const top = y(v), base = y(0), der = x + barraW;
+    return `M${x},${base} V${top + r} Q${x},${top} ${x + r},${top} H${der - r} Q${der},${top} ${der},${top + r} V${base} Z`;
+  };
+%>
+<ul class="leyenda" aria-hidden="true">
+  <% series.forEach((s) => { %>
+    <li><span class="leyenda__muestra <%= s.clase %>"></span><%= s.nombre %></li>
+  <% }) %>
+</ul>
+<svg class="grafico" viewBox="0 0 <%= ancho %> <%= alto %>" role="img"
+     aria-label="Unidades entregadas por mes: <%= meses.map((x) => `${x.etiqueta} ${x.insumos} insumos y ${x.repuestos} repuestos`).join('; ') %>">
+  <% marcas.forEach((v) => { %>
+    <line class="grafico__rejilla <%= v === 0 ? 'grafico__base' : '' %>" x1="<%= m.izq %>" x2="<%= ancho - m.der %>" y1="<%= y(v) %>" y2="<%= y(v) %>" />
+    <text class="grafico__eje" x="<%= m.izq - 8 %>" y="<%= y(v) + 4 %>" text-anchor="end"><%= v %></text>
+  <% }) %>
+
+  <% meses.forEach((mes, i) => { %>
+    <% const centro = m.izq + grupoW * i + grupoW / 2; %>
+    <g class="grafico__grupo" tabindex="0"
+       data-tip="<strong><%= mes.etiqueta %> <%= mes.anio %></strong><% series.forEach((s) => { %><span><i class='<%= s.clase %>'></i><%= s.nombre %>: <b><%= mes[s.clave] %></b></span><% }) %>">
+      <rect class="grafico__zona" x="<%= m.izq + grupoW * i %>" y="<%= m.arr %>" width="<%= grupoW %>" height="<%= plotH %>" />
+      <% series.forEach((s, j) => { %>
+        <% if (mes[s.clave] > 0) { %>
+          <path class="<%= s.clase %>" d="<%= barra(centro - barraW - separacion / 2 + j * (barraW + separacion), mes[s.clave]) %>" />
+        <% } %>
+      <% }) %>
+      <text class="grafico__eje" x="<%= centro %>" y="<%= alto - 8 %>" text-anchor="middle"><%= mes.etiqueta %></text>
+    </g>
+  <% }) %>
+</svg>

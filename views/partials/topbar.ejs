@@ -1,17 +1,25 @@
 <header class="topbar">
-  <label class="topbar__menu" for="menu-toggle" aria-label="Abrir menú">
-    <i class="fa-solid fa-bars"></i>
-  </label>
+  <a class="marca" href="/" aria-label="Inventario CGI · Inicio">
+    <span class="marca__logo" aria-hidden="true">CGI</span>
+    <span class="marca__texto">
+      <span class="marca__nombre">Inventario CGI</span>
+      <span class="marca__org">Área de Salud Naranjo</span>
+    </span>
+  </a>
 
-  <nav class="migas" aria-label="Ruta">
-    <span>Inventario</span>
-    <% migas.forEach((miga) => { %>
-      <i class="fa-solid fa-chevron-right migas__sep" aria-hidden="true"></i>
-      <a href="<%= miga.href %>"><%= miga.texto %></a>
-    <% }) %>
-    <i class="fa-solid fa-chevron-right migas__sep" aria-hidden="true"></i>
-    <span class="migas__actual" aria-current="page"><%= titulo %></span>
-  </nav>
+  <% if (seccion !== "panel") { %>
+    <a class="topbar__inicio" href="/">
+      <i class="fa-solid fa-house" aria-hidden="true"></i><span>Inicio</span>
+    </a>
+
+    <nav class="migas" aria-label="Ruta">
+      <% migas.forEach((miga) => { %>
+        <a href="<%= miga.href %>"><%= miga.texto %></a>
+        <i class="fa-solid fa-chevron-right migas__sep" aria-hidden="true"></i>
+      <% }) %>
+      <span class="migas__actual" aria-current="page"><%= titulo %></span>
+    </nav>
+  <% } %>
 
   <% if (busqueda) { %>
     <form
